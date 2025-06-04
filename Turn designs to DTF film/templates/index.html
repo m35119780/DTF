@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Designs - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Modern Hero Section -->
+        <div class="text-center mb-5 fade-in-up-hidden">
+            <div class="py-5">
+                <div class="position-relative mb-4">
+                    <i class="fas fa-print fa-5x position-absolute" 
+                       style="opacity: 0.08; z-index: -1; left: 50%; transform: translateX(-50%) scale(4); top: -15px;"></i>
+                    <i class="fas fa-magic fa-4x mb-4" 
+                       style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-3">DTF Design Packer</h1>
+                <p class="lead text-secondary fs-5">Help DTF printers setup their designs and collect them for printing</p>
+                <p class="text-muted mb-4">Optimize your DTF layouts with intelligent packing algorithms for maximum efficiency</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <span class="badge bg-light text-primary px-3 py-2"><i class="fas fa-sync-alt me-2"></i>Smart Rotation</span>
+                    <span class="badge bg-light text-primary px-3 py-2"><i class="fas fa-th-large me-2"></i>Space Optimization</span>
+                    <span class="badge bg-light text-primary px-3 py-2"><i class="fas fa-file-export me-2"></i>Multiple Formats</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Upload Section -->
+            <div class="col-lg-8">
+                <div class="card fade-in-up-hidden" data-delay="100">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>
+                        <h5 class="mb-0">Upload Your DTF Designs</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <!-- CSRF Protection -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div id="dragDropArea" class="file-upload-area mb-4 position-relative">
+                                <input class="form-control position-absolute" type="file" id="files" name="files[]" 
+                                       multiple accept=".png,.jpg,.jpeg" required
+                                       style="opacity: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; cursor: pointer; z-index: 10;">
+                                
+                                <div id="uploadContent" class="text-center py-4">
+                                    <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                    <h5 class="fw-bold mb-2">Drop your design files here</h5>
+                                    <p class="text-muted mb-3">or click to browse your files</p>
+                                    
+                                    <div id="fileTypes" class="d-flex justify-content-center gap-2 mb-3">
+                                        <span class="badge bg-light text-dark px-2">.PNG</span>
+                                        <span class="badge bg-light text-dark px-2">.JPG</span>
+                                        <span class="badge bg-light text-dark px-2">.JPEG</span>
+                                    </div>
+                                    
+                                    <div class="small text-primary">
+                                        <i class="fas fa-lightbulb me-1"></i> Include dimensions in filename (e.g., design_5cm.png)
+                                    </div>
+                                </div>
+                                
+                                <div id="uploadingContent" class="text-center py-4" style="display: none;">
+                                    <div class="spinner-border text-primary mb-3" role="status">
+                                        <span class="visually-hidden">Uploading...</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-2">Uploading your designs...</h5>
+                                    <p class="text-muted mb-0">Please wait while we process your files</p>
+                                </div>
+                                
+                                <div id="fileList" class="mt-3" style="display: none;">
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-check-circle text-success me-2"></i>Files ready to upload:</h6>
+                                    <ul class="list-group" id="selectedFiles"></ul>
+                                </div>
+                                
+                                <div id="rejectedFilesList" class="mt-3" style="display: none;">
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Files with issues:</h6>
+                                    <ul class="list-group" id="rejectedFiles"></ul>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                                    <i class="fas fa-arrow-circle-up me-2"></i> Upload and Continue
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info & Tips Section -->
+            <div class="col-lg-4">
+                <!-- File Requirements Card -->
+                <div class="card fade-in-right-hidden" data-delay="200">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <h6 class="mb-0">File Requirements</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6 class="fw-semibold text-primary mb-2">
+                                <i class="fas fa-tag me-2"></i>Filename Format
+                            </h6>
+                            <div class="small">
+                                <div class="mb-2 p-2 bg-light rounded">
+                                    <code class="text-success">design_5cm.png</code>
+                                    <small class="text-muted d-block">Dimension in filename</small>
+                                </div>
+                                <div class="mb-2 p-2 bg-light rounded">
+                                    <code class="text-success">design_5x7cm.png</code>
+                                    <small class="text-muted d-block">Width x Height format</small>
+                                </div>
+                                <div class="mb-2 p-2 bg-light rounded">
+                                    <code class="text-success">logo_8.5cm.jpg</code>
+                                    <small class="text-muted d-block">With decimals</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="fw-semibold text-primary mb-2">
+                                <i class="fas fa-file-image me-2"></i>Image Requirements
+                            </h6>
+                            <ul class="small text-muted ps-3 mb-0">
+                                <li class="mb-1">PNG with transparency (preferred)</li>
+                                <li class="mb-1">Clean design without background</li>
+                                <li class="mb-1">Maximum 100MB total upload</li>
+                                <li>Any resolution (higher = better quality)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pro Tips Card -->
+                <div class="card mt-4 fade-in-right-hidden" data-delay="300">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <h6 class="mb-0">Pro Tips</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="small">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Enable rotation</strong>
+                                    <span class="text-muted">This can improve packing efficiency by up to 30%</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Name files consistently</strong>
+                                    <span class="text-muted">Include real-world dimensions for best results</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-0">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Use 60cm width</strong>
+                                    <span class="text-muted">Standard DTF film width for optimal layout</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const filesInput = document.getElementById('files');
+    const dragDropArea = document.getElementById('dragDropArea');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const uploadContent = document.getElementById('uploadContent');
+    const uploadingContent = document.getElementById('uploadingContent');
+    const rejectedFilesList = document.getElementById('rejectedFilesList');
+    const rejectedFiles = document.getElementById('rejectedFiles');
+
+    if (!uploadForm || !uploadBtn || !filesInput) {
+        console.error('Required form elements not found');
+        return;
+    }
+
+    // Drag and drop handling
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dragDropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dragDropArea.classList.add('dragover');
+    }
+
+    function unhighlight() {
+        dragDropArea.classList.remove('dragover');
+    }
+
+    dragDropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        filesInput.files = files;
+        updateFileList();
+    }
+
+    // Update file list when files are selected
+    filesInput.addEventListener('change', updateFileList);
+
+    function updateFileList() {
+        if (filesInput.files.length > 0) {
+            selectedFiles.innerHTML = '';
+            fileList.style.display = 'block';
+            
+            for (let i = 0; i < filesInput.files.length; i++) {
+                const file = filesInput.files[i];
+                const item = document.createElement('li');
+                item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                
+                const fileIcon = getFileIcon(file.name);
+                const fileSize = formatFileSize(file.size);
+                
+                item.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${fileIcon} text-primary me-2"></i>
+                        <div class="text-truncate" style="max-width: 200px;">${file.name}</div>
+                    </div>
+                    <span class="badge bg-light text-dark">${fileSize}</span>
+                `;
+                
+                selectedFiles.appendChild(item);
+            }
+            
+            // Add a count badge
+            const countBadge = document.createElement('div');
+            countBadge.className = 'alert alert-info mt-2 mb-0 py-2 small';
+            countBadge.innerHTML = `<i class="fas fa-info-circle me-2"></i>${filesInput.files.length} files selected`;
+            selectedFiles.appendChild(countBadge);
+        } else {
+            fileList.style.display = 'none';
+        }
+        
+        // Hide rejected files list when selecting new files
+        rejectedFilesList.style.display = 'none';
+        rejectedFiles.innerHTML = '';
+    }
+    
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        if (['png', 'jpg', 'jpeg'].includes(ext)) {
+            return 'fas fa-file-image';
+        }
+        return 'fas fa-file';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    // Display rejected files
+    function displayRejectedFiles(rejectedFilesList) {
+        if (!rejectedFilesList || rejectedFilesList.length === 0) {
+            return;
+        }
+        
+        rejectedFiles.innerHTML = '';
+        
+        for (const file of rejectedFilesList) {
+            const item = document.createElement('li');
+            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            const fileIcon = 'fas fa-exclamation-circle text-warning';
+            
+            item.innerHTML = `
+                <div class="d-flex align-items-center flex-grow-1">
+                    <i class="${fileIcon} me-2"></i>
+                    <div class="text-truncate me-2">${file.filename}</div>
+                </div>
+                <small class="text-danger">${file.reason}</small>
+            `;
+            
+            rejectedFiles.appendChild(item);
+        }
+        
+        // Display the container
+        rejectedFilesList.style.display = 'block';
+    }
+
+    // Form submission handler
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (filesInput.files.length === 0) {
+            showToast('Please select at least one file', 'warning');
+            return;
+        }
+        
+        // Show loading state
+        uploadBtn.disabled = true;
+        uploadContent.style.display = 'none';
+        uploadingContent.style.display = 'block';
+        fileList.style.display = 'none';
+        rejectedFilesList.style.display = 'none';
+        
+        const formData = new FormData();
+        for (let i = 0; i < filesInput.files.length; i++) {
+            formData.append('files[]', filesInput.files[i]);
+        }
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.redirect) {
+                // Check if there are warnings or rejected files
+                if (data.warning) {
+                    showToast(data.warning, 'warning');
+                }
+                
+                // Redirect to next page if successful
+                window.location.href = data.redirect;
+            } else if (data.error) {
+                // Handle error with rejected files
+                showToast('Error: ' + data.error, 'danger');
+                
+                // Display rejected files if any
+                if (data.rejected_files && data.rejected_files.length > 0) {
+                    displayRejectedFiles(data.rejected_files);
+                }
+                
+                resetUploadState();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Upload failed. Please try again.', 'danger');
+            resetUploadState();
+        });
+    });
+    
+    function resetUploadState() {
+        uploadBtn.disabled = false;
+        uploadContent.style.display = 'block';
+        uploadingContent.style.display = 'none';
+        if (filesInput.files.length > 0) {
+            fileList.style.display = 'block';
+        }
+    }
+    
+    function showToast(message, type = 'primary') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = 11;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast show align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-info-circle me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(toastContainer);
+            }, 500);
+        }, 5000);
+    }
+});
+</script>
+{% endblock %} 

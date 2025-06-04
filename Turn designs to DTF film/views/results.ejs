@@ -1,0 +1,172 @@
+<%- include('base') %>
+
+<div class="row">
+  <div class="col-lg-10 mx-auto">
+    <div class="section-card">
+      <h1 class="section-title">نتائج معالجة الصور</h1>
+      <p class="section-subtitle">تم الانتهاء من ترتيب الصور بنجاح</p>
+      
+      <div id="results-container">
+        <% if (results.hasPNG || results.hasPDF) { %>
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            تم ترتيب <strong><%= results.placedCount %></strong> من الصور بنجاح.
+            <% if (results.unplacedCount > 0) { %>
+              <br>
+              <span class="text-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                تعذر وضع <strong><%= results.unplacedCount %></strong> من الصور على اللوحة بسبب محدودية المساحة.
+              </span>
+            <% } %>
+          </div>
+          
+          <div class="row mb-5">
+            <div class="col-md-8">
+              <div class="result-preview">
+                <h3 class="mb-3">معاينة النتيجة</h3>
+                <% if (results.hasPNG) { %>
+                  <img src="/preview/<%= session.uploadId %>/output.png" class="result-image preview-image" alt="معاينة النتيجة">
+                <% } else { %>
+                  <div class="no-preview">
+                    <i class="fas fa-image fa-4x text-muted"></i>
+                    <p>المعاينة غير متوفرة</p>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="download-section">
+                <h3 class="mb-3">تحميل النتائج</h3>
+                
+                <div class="download-options">
+                  <% if (results.hasPDF) { %>
+                    <a href="/download/pdf" class="btn btn-primary btn-block mb-2">
+                      <i class="fas fa-file-pdf"></i> تحميل ملف PDF
+                    </a>
+                  <% } %>
+                  
+                  <% if (results.hasPNG) { %>
+                    <a href="/download/png" class="btn btn-primary btn-block mb-2">
+                      <i class="fas fa-file-image"></i> تحميل صورة PNG
+                    </a>
+                  <% } %>
+                </div>
+                
+                <div class="result-stats mt-4">
+                  <h4 class="mb-3">إحصائيات النتيجة</h4>
+                  <ul class="list-group">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      عدد الصور الإجمالي
+                      <span class="badge bg-primary rounded-pill"><%= results.placedCount + results.unplacedCount %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      الصور المرتبة
+                      <span class="badge bg-success rounded-pill"><%= results.placedCount %></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      الصور غير المرتبة
+                      <span class="badge bg-warning rounded-pill"><%= results.unplacedCount %></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- تفاصيل المواضع -->
+          <% if (results.unplacedCount > 0) { %>
+            <div class="unplaced-images mt-4">
+              <h3 class="mb-3">الصور التي تعذر ترتيبها</h3>
+              <div class="alert alert-warning">
+                <p>
+                  <i class="fas fa-exclamation-triangle"></i>
+                  تعذر وضع الصور التالية على اللوحة. يمكنك تجربة أحد الحلول التالية:
+                </p>
+                <ul>
+                  <li>زيادة عرض اللوحة</li>
+                  <li>تقليل المسافة بين الصور</li>
+                  <li>تمكين خيار تدوير الصور</li>
+                  <li>معالجة هذه الصور في مهمة منفصلة</li>
+                </ul>
+              </div>
+              
+              <div class="unplaced-details">
+                <pre class="unplaced-text"><%= results.unplacedText %></pre>
+              </div>
+            </div>
+          <% } %>
+          
+          <div class="actions text-center mt-5">
+            <a href="/cleanup" class="btn btn-outline-primary me-2">
+              <i class="fas fa-redo-alt"></i> بدء مهمة جديدة
+            </a>
+            <a href="/configure" class="btn btn-outline-secondary">
+              <i class="fas fa-sliders-h"></i> تعديل الإعدادات وإعادة المحاولة
+            </a>
+          </div>
+        <% } else { %>
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            لم يتم العثور على نتائج معالجة. يرجى التأكد من اكتمال عملية المعالجة.
+          </div>
+          
+          <div class="text-center mt-4">
+            <a href="/configure" class="btn btn-primary">
+              <i class="fas fa-arrow-right"></i> العودة إلى صفحة التكوين
+            </a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة منبثقة لمعاينة الصور -->
+<div id="preview-modal" class="preview-modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <img id="modal-image" class="modal-image" src="" alt="معاينة موسعة">
+  </div>
+</div>
+
+<style>
+  .result-preview {
+    margin-bottom: 2rem;
+  }
+  
+  .result-image {
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  
+  .no-preview {
+    padding: 3rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    color: #6c757d;
+  }
+  
+  .download-section {
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    height: 100%;
+  }
+  
+  .unplaced-text {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    max-height: 250px;
+    overflow-y: auto;
+    direction: ltr;
+    text-align: left;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+</style> 

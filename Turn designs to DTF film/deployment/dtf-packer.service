@@ -1,0 +1,46 @@
+[Unit]
+Description=DTF Design Packer Web Application
+After=network.target
+Wants=redis-server.service
+
+[Service]
+# Run as non-root user
+User=www-data
+Group=www-data
+
+# Working directory
+WorkingDirectory=/opt/dtf-packer
+
+# Path to virtualenv
+Environment="PATH=/opt/dtf-packer/venv/bin"
+
+# Environment variables
+Environment="SECRET_KEY=replace_with_actual_secret_key"
+Environment="SESSION_COOKIE_SECURE=true"
+Environment="SESSION_TIMEOUT=7200"
+Environment="SESSION_CLEANUP_INTERVAL=1800"
+Environment="GUNICORN_WORKERS=4"
+Environment="GUNICORN_LOG_LEVEL=info"
+Environment="GUNICORN_ERROR_LOG=/var/log/dtf-packer/error.log"
+Environment="GUNICORN_ACCESS_LOG=/var/log/dtf-packer/access.log"
+Environment="REDIS_URL=redis://localhost:6379/0"
+
+# Create log directory if it doesn't exist
+ExecStartPre=/bin/mkdir -p /var/log/dtf-packer
+ExecStartPre=/bin/chown -R www-data:www-data /var/log/dtf-packer
+
+# Start Gunicorn with config file
+ExecStart=/opt/dtf-packer/venv/bin/gunicorn -c /opt/dtf-packer/gunicorn.conf.py wsgi:app
+
+# Restart on failure
+Restart=always
+RestartSec=5
+
+# Basic security measures
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target 

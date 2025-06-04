@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Session Management - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card glass">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-shield-alt me-2"></i> Session Management</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Session Statistics</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>Active Sessions</th>
+                                        <td>{{ stats.active_sessions }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Expired Sessions</th>
+                                        <td>{{ stats.expired_sessions }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total Sessions</th>
+                                        <td>{{ stats.total_sessions }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Oldest Active Session</th>
+                                        <td>{{ stats.oldest_active_session|default('None') }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="mb-3">System Information</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>Upload Folder Size</th>
+                                        <td>{{ stats.upload_folder_size }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Output Folder Size</th>
+                                        <td>{{ stats.output_folder_size }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Session Timeout</th>
+                                        <td>{{ stats.session_timeout }} seconds ({{ (stats.session_timeout / 60)|int }} minutes)</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Cleanup Interval</th>
+                                        <td>{{ stats.cleanup_interval }} seconds ({{ (stats.cleanup_interval / 60)|int }} minutes)</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4 class="mb-3">Management Actions</h4>
+                            <div class="d-flex gap-3">
+                                <a href="{{ url_for('admin_sessions', key=request.args.get('key'), action='cleanup') }}" class="btn btn-warning">
+                                    <i class="fas fa-broom me-2"></i> Clean Up Expired Sessions
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12">
+            <div class="card glass">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0"><i class="fas fa-users me-2"></i> Active Sessions</h3>
+                </div>
+                <div class="card-body">
+                    {% if stats.active_session_details %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Session ID</th>
+                                        <th>Age</th>
+                                        <th>Last Activity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in stats.active_session_details %}
+                                        <tr>
+                                            <td><code>{{ session.id }}</code></td>
+                                            <td>{{ session.age }}</td>
+                                            <td>{{ session.last_activity }} ago</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if stats.active_sessions > 10 %}
+                            <div class="text-muted">
+                                <small>Showing 10 of {{ stats.active_sessions }} active sessions</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No active sessions found.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

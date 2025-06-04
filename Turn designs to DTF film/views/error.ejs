@@ -1,0 +1,88 @@
+<%- include('base') %>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="section-card error-card">
+      <div class="text-center mb-4">
+        <div class="error-icon">
+          <i class="fas fa-exclamation-triangle fa-4x text-danger"></i>
+        </div>
+        <h1 class="error-code"><%= errorCode || 500 %></h1>
+        <h2 class="error-title">
+          <% if (errorCode === 404) { %>
+            الصفحة غير موجودة
+          <% } else if (errorCode === 403) { %>
+            غير مصرح بالوصول
+          <% } else { %>
+            حدث خطأ
+          <% } %>
+        </h2>
+      </div>
+      
+      <div class="error-message-box">
+        <p><%= errorMessage || 'حدث خطأ غير متوقع في الخادم.' %></p>
+        
+        <% if (typeof stack !== 'undefined' && stack) { %>
+          <details class="mt-3">
+            <summary>تفاصيل الخطأ الفني</summary>
+            <pre class="error-stack"><%= stack %></pre>
+          </details>
+        <% } %>
+      </div>
+      
+      <div class="error-actions text-center mt-4">
+        <a href="/" class="btn btn-primary me-2">
+          <i class="fas fa-home"></i> العودة إلى الصفحة الرئيسية
+        </a>
+        
+        <button onclick="history.back()" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-right"></i> العودة للخلف
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .error-card {
+    border-top: 5px solid #e74c3c;
+  }
+  
+  .error-icon {
+    margin-bottom: 20px;
+  }
+  
+  .error-code {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #e74c3c;
+    margin-bottom: 10px;
+  }
+  
+  .error-title {
+    font-size: 1.75rem;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .error-message-box {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    border-right: 4px solid #e74c3c;
+  }
+  
+  .error-stack {
+    background-color: #f1f1f1;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    direction: ltr;
+    text-align: left;
+    font-family: monospace;
+    font-size: 0.8rem;
+    overflow-x: auto;
+    max-height: 300px;
+  }
+</style> 

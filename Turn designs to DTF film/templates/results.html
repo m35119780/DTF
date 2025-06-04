@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+
+{% block title %}DTF Layout Results - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="text-center mb-5 fade-in-up-hidden">
+            <div class="position-relative">
+                <i class="fas fa-check-circle fa-5x position-absolute" 
+                   style="opacity: 0.08; z-index: -1; left: 50%; transform: translateX(-50%) scale(4); top: -15px;"></i>
+                <i class="fas fa-check-circle text-success fa-4x mb-4"></i>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Packing Complete!</h1>
+            <p class="lead text-secondary fs-5">Your DTF layout has been optimized successfully</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <!-- Summary Card -->
+                <div class="card mb-4 fade-in-up-hidden" data-delay="100">
+                    <div class="card-header bg-success text-white d-flex align-items-center">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        <h5 class="mb-0">Layout Summary</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-semibold text-dark">Total Designs:</span>
+                                        <span class="badge bg-primary fs-6">{{ summary.total_images }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-semibold text-dark">Successfully Placed:</span>
+                                        <span class="badge bg-success fs-6">{{ summary.placed_images }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-semibold text-dark">Unplaced Designs:</span>
+                                        <span class="badge {% if summary.unplaced_images > 0 %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                            {{ summary.unplaced_images }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-semibold text-dark">Canvas Width:</span>
+                                        <span class="badge bg-light text-dark fs-6">{{ "%.1f"|format(summary.canvas_width_mm / 10) }} cm</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-semibold text-dark">Canvas Height:</span>
+                                        <span class="badge bg-light text-dark fs-6">{{ "%.1f"|format(summary.canvas_height_mm / 10) }} cm</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-semibold text-dark">Packing Efficiency:</span>
+                                        <span class="badge bg-info fs-6">
+                                            {{ "%.1f"|format(summary.efficiency) }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="glass p-3 rounded-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-info-circle text-primary me-2 fs-5"></i>
+                                    <h6 class="mb-0">Layout Details</h6>
+                                </div>
+                                <p class="small text-muted mb-0">
+                                    Your DTF film layout has dimensions of {{ "%.1f"|format(summary.canvas_width_mm / 10) }} × {{ "%.1f"|format(summary.canvas_height_mm / 10) }} cm,
+                                    with a total area of {{ "%.1f"|format((summary.canvas_width_mm * summary.canvas_height_mm) / 100) }} cm².
+                                    {% if summary.placed_images == summary.total_images %}
+                                    All designs were successfully placed with {{ "%.1f"|format(summary.efficiency) }}% efficiency.
+                                    {% else %}
+                                    {{ summary.placed_images }} out of {{ summary.total_images }} designs were placed with {{ "%.1f"|format(summary.efficiency) }}% efficiency.
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        {% if summary.unplaced_images > 0 %}
+                        <div class="mt-3">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>{{ summary.unplaced_images }} designs could not be placed.</strong>
+                                Consider adjusting canvas width, allowing rotation, or reducing spacing.
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Download Card -->
+                <div class="card mb-4 fade-in-up-hidden" data-delay="200">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-download me-2"></i>
+                        <h5 class="mb-0">Download Results</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <a href="{{ url_for('download_results') }}" class="btn btn-primary btn-lg d-flex align-items-center justify-content-center gap-3 py-3">
+                                <i class="fas fa-file-archive fs-4"></i>
+                                <div class="text-start">
+                                    <span class="d-block fw-bold">Download All Files (ZIP)</span>
+                                    <small class="opacity-75">Complete package with all generated formats</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <h6 class="fw-bold mb-3">Individual Files</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {% if 'pdf' in outputs %}
+                                <a href="{{ url_for('download_individual', file_type='pdf') }}" class="btn btn-outline-danger d-flex align-items-center w-100">
+                                    <i class="fas fa-file-pdf me-3 fs-5"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">PDF File</span>
+                                        <small class="opacity-75">Print-ready document</small>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary d-flex align-items-center w-100 disabled" disabled 
+                                        data-format="PDF" onclick="showFormatUnavailableToast('PDF')">
+                                    <i class="fas fa-file-pdf me-3 fs-5 text-muted"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">PDF File</span>
+                                        <small class="opacity-75">Not generated</small>
+                                    </div>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if 'png' in outputs %}
+                                <a href="{{ url_for('download_individual', file_type='png') }}" class="btn btn-outline-success d-flex align-items-center w-100">
+                                    <i class="fas fa-file-image me-3 fs-5"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">PNG File</span>
+                                        <small class="opacity-75">Visual preview</small>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary d-flex align-items-center w-100 disabled" disabled
+                                        data-format="PNG" onclick="showFormatUnavailableToast('PNG')">
+                                    <i class="fas fa-file-image me-3 fs-5 text-muted"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">PNG File</span>
+                                        <small class="opacity-75">Not generated</small>
+                                    </div>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if 'svg' in outputs %}
+                                <a href="{{ url_for('download_individual', file_type='svg') }}" class="btn btn-outline-warning d-flex align-items-center w-100">
+                                    <i class="fas fa-vector-square me-3 fs-5"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">SVG File</span>
+                                        <small class="opacity-75">Vector format</small>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary d-flex align-items-center w-100 disabled" disabled
+                                        data-format="SVG" onclick="showFormatUnavailableToast('SVG')">
+                                    <i class="fas fa-vector-square me-3 fs-5 text-muted"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">SVG File</span>
+                                        <small class="opacity-75">Not generated</small>
+                                    </div>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if 'report' in outputs %}
+                                <a href="{{ url_for('download_individual', file_type='report') }}" class="btn btn-outline-info d-flex align-items-center w-100">
+                                    <i class="fas fa-file-alt me-3 fs-5"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">Report</span>
+                                        <small class="opacity-75">Placement coordinates</small>
+                                    </div>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary d-flex align-items-center w-100 disabled" disabled
+                                        data-format="Report" onclick="showFormatUnavailableToast('Report')">
+                                    <i class="fas fa-file-alt me-3 fs-5 text-muted"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">Report</span>
+                                        <small class="opacity-75">Not generated</small>
+                                    </div>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-light rounded-3">
+                            <h6 class="fw-bold mb-2"><i class="fas fa-info-circle me-2"></i>What's included in the ZIP file:</h6>
+                            <ul class="list-unstyled mb-0 small">
+                                {% if 'pdf' in outputs %}
+                                <li class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-file-pdf text-danger me-2"></i> 
+                                    <strong>packed_output.pdf</strong> - Print-ready PDF with exact dimensions
+                                </li>
+                                {% endif %}
+                                {% if 'png' in outputs %}
+                                <li class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-file-image text-success me-2"></i> 
+                                    <strong>packed_output.png</strong> - Visual preview image at {{ config.png_dpi }} DPI
+                                </li>
+                                {% endif %}
+                                {% if 'svg' in outputs %}
+                                <li class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-vector-square text-warning me-2"></i> 
+                                    <strong>packed_output.svg</strong> - Editable vector format for Adobe Illustrator
+                                </li>
+                                {% endif %}
+                                {% if 'report' in outputs %}
+                                <li class="d-flex align-items-center">
+                                    <i class="fas fa-file-alt text-info me-2"></i> 
+                                    <strong>placements.txt</strong> - Detailed placement coordinates for each design
+                                </li>
+                                {% endif %}
+                            </ul>
+                            
+                            {% if 'pdf' not in outputs or 'png' not in outputs or 'svg' not in outputs or 'report' not in outputs %}
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small>Some output formats were not generated based on your configuration settings.</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Card -->
+                <div class="card fade-in-up-hidden" data-delay="300">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-tools me-2"></i>
+                        <h5 class="mb-0">Next Steps</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <a href="{{ url_for('index') }}" class="btn btn-outline-primary d-flex align-items-center w-100 py-3">
+                                    <i class="fas fa-plus-circle me-3 fs-4"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">Start New Layout</span>
+                                        <small class="opacity-75">Upload a new set of designs</small>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ url_for('cleanup_session') }}" class="btn btn-outline-secondary d-flex align-items-center w-100 py-3">
+                                    <i class="fas fa-trash-alt me-3 fs-4"></i>
+                                    <div class="text-start">
+                                        <span class="d-block fw-semibold">Clear Session</span>
+                                        <small class="opacity-75">Delete all current data</small>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- Statistics Card -->
+                <div class="card mb-4 fade-in-right-hidden" data-delay="200">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        <h6 class="mb-0">DTF Layout Statistics</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if summary.placed_images > 0 %}
+                        <div class="text-center mb-4">
+                            <div class="position-relative" style="width: 120px; height: 120px; margin: 0 auto;">
+                                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <span class="d-block fs-3 fw-bold text-primary">{{ "%.1f"|format(summary.efficiency) }}%</span>
+                                        <span class="small text-muted">Efficiency</span>
+                                    </div>
+                                </div>
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#e9ecef" stroke-width="12" />
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#4F46E5" stroke-width="12"
+                                            stroke-dasharray="339.292" stroke-dashoffset="{{ 339.292 - (339.292 * summary.efficiency / 100) }}"
+                                            transform="rotate(-90 60 60)" />
+                                </svg>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <h6 class="fw-semibold mb-2">Dimensions</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-ruler-combined text-primary me-2"></i>
+                                <span class="text-muted">{{ "%.1f"|format(summary.canvas_width_mm / 10) }} × {{ "%.1f"|format(summary.canvas_height_mm / 10) }} cm</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-vector-square text-primary me-2"></i>
+                                <span class="text-muted">{{ "%.1f"|format((summary.canvas_width_mm * summary.canvas_height_mm) / 100) }} cm² total area</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="fw-semibold mb-2">Design Coverage</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted">Space Utilization</span>
+                                <span class="small text-primary">{{ "%.1f"|format(summary.efficiency) }}%</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ summary.efficiency }}%" 
+                                     aria-valuenow="{{ summary.efficiency }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="fw-semibold mb-2">Design Placement</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-muted">Placed Designs</span>
+                                <span class="small text-primary">{{ summary.placed_images }}/{{ summary.total_images }}</span>
+                            </div>
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ (summary.placed_images / summary.total_images) * 100 }}%" 
+                                     aria-valuenow="{{ (summary.placed_images / summary.total_images) * 100 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+
+                        {% if summary.unplaced_images == 0 %}
+                        <div class="alert alert-success py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <small><strong>Perfect!</strong> All designs placed successfully.</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Performance Timing Card -->
+                {% if outputs.timing %}
+                <div class="card mb-4 fade-in-right-hidden" data-delay="300">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-stopwatch me-2"></i>
+                        <h6 class="mb-0">Processing Times</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-image text-success me-2"></i>
+                                <span>PNG Generation</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ (outputs.timing.png_time / outputs.timing.total_time) * 100 }}%"></div>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ "%.2f"|format(outputs.timing.png_time) }}s</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-vector-square text-warning me-2"></i>
+                                <span>SVG Generation</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ (outputs.timing.svg_time / outputs.timing.total_time) * 100 }}%"></div>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ "%.2f"|format(outputs.timing.svg_time) }}s</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                <span>PDF Generation</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ (outputs.timing.pdf_time / outputs.timing.total_time) * 100 }}%"></div>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ "%.2f"|format(outputs.timing.pdf_time) }}s</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-alt text-info me-2"></i>
+                                <span>Report Generation</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-info" style="width: {{ (outputs.timing.report_time / outputs.timing.total_time) * 100 }}%"></div>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ "%.2f"|format(outputs.timing.report_time) }}s</span>
+                            </div>
+                        </div>
+                        
+                        {% if outputs.timing.zip_time %}
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-archive text-secondary me-2"></i>
+                                <span>ZIP Creation</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="progress me-2" style="width: 60px; height: 6px;">
+                                    <div class="progress-bar bg-secondary" style="width: {{ (outputs.timing.zip_time / outputs.timing.total_time) * 100 }}%"></div>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ "%.2f"|format(outputs.timing.zip_time) }}s</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex align-items-center justify-content-between border-top pt-3 mt-1">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-clock text-primary me-2"></i>
+                                <strong>Total Time</strong>
+                            </div>
+                            <span class="badge bg-primary px-3">{{ "%.2f"|format(outputs.timing.total_time) }}s</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if summary.unplaced_images > 0 and pack_result.unplaced_images %}
+                <!-- Unplaced Images Card -->
+                <div class="card fade-in-right-hidden" data-delay="400">
+                    <div class="card-header d-flex align-items-center bg-warning text-dark">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <h6 class="mb-0">Unplaced Designs</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            The following designs couldn't be placed on the canvas. Consider adjusting the canvas width or enabling rotation.
+                        </p>
+                        <div style="max-height: 300px; overflow-y: auto;" class="custom-scrollbar">
+                            {% for img in pack_result.unplaced_images %}
+                            <div class="d-flex align-items-center p-2 mb-2 bg-light rounded">
+                                <i class="fas fa-image text-warning me-2"></i>
+                                <div class="text-truncate flex-grow-1 me-2">
+                                    <small>{{ img.filename }}</small>
+                                </div>
+                                <div class="small text-muted">
+                                    {{ img.width_mm }}×{{ img.height_mm }}mm
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="alert alert-info mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <small>Try setting the canvas width to {{ summary.canvas_width_mm / 10 * 2 }}cm to fit more designs.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+    
+    // Download button animations
+    const downloadButtons = document.querySelectorAll('.btn-primary, .btn-outline-primary, .btn-outline-danger, .btn-outline-success, .btn-outline-warning, .btn-outline-info');
+    
+    downloadButtons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.classList.add('shadow-sm');
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.classList.remove('shadow-sm');
+        });
+        
+        button.addEventListener('click', function() {
+            // Add a visual feedback when clicking download
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.add('fa-spin');
+                setTimeout(() => {
+                    icon.classList.remove('fa-spin');
+                }, 500);
+            }
+        });
+    });
+    
+    // Add event listeners for disabled format buttons
+    document.querySelectorAll('button[data-format]').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const format = this.getAttribute('data-format');
+            showFormatUnavailableToast(format);
+        });
+    });
+    
+    // Function to show toast when unavailable format is clicked
+    window.showFormatUnavailableToast = function(format) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Create toast element
+        const toastId = 'format-toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = 'toast show align-items-center text-white bg-primary border-0';
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        // Set toast content
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>${format} file not available</strong>: Format was not selected during configuration.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Add toast to container
+        toastContainer.appendChild(toast);
+        
+        // Handle close button click
+        const closeBtn = toast.querySelector('.btn-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            });
+        }
+        
+        // Remove toast after 5 seconds
+        setTimeout(() => {
+            const toastElement = document.getElementById(toastId);
+            if (toastElement) {
+                toastElement.classList.remove('show');
+                setTimeout(() => {
+                    if (toastElement.parentNode) {
+                        toastElement.parentNode.removeChild(toastElement);
+                    }
+                }, 300);
+            }
+        }, 5000);
+    };
+    
+    // Function to navigate to upload page
+    window.navigateToUpload = function() {
+        window.location.href = "{{ url_for('index') }}";
+    };
+});
+</script>
+
+<!-- Add CSS for toast notifications -->
+<style>
+.toast {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    min-width: 280px;
+    max-width: 350px;
+    backdrop-filter: blur(10px);
+}
+
+.toast-header {
+    border-bottom: none;
+    padding: 0.75rem 1rem;
+}
+
+.toast-body {
+    padding: 1rem;
+}
+
+.toast.show {
+    animation: toast-in 0.3s ease-out forwards;
+}
+
+.toast.hide {
+    animation: toast-out 0.3s ease-in forwards;
+}
+
+@keyframes toast-in {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-20px); opacity: 0; }
+}
+</style>
+{% endblock %} 

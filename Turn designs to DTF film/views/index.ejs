@@ -1,0 +1,142 @@
+<%- include('base') %>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="section-card">
+      <h1 class="section-title">DTF Film Smart Packer</h1>
+      <p class="section-subtitle">أداة ذكية لترتيب صور DTF الخاصة بك بشكل مثالي لتوفير المواد</p>
+      
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="feature-box">
+            <i class="fas fa-object-group fa-2x text-primary mb-3"></i>
+            <h3>ترتيب تلقائي</h3>
+            <p>يقوم بترتيب العديد من الصور على لوحة واحدة مما يوفر المساحة ويقلل من هدر المواد.</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="feature-box">
+            <i class="fas fa-rotate fa-2x text-primary mb-3"></i>
+            <h3>دعم التدوير</h3>
+            <p>يستخدم خوارزمية متقدمة لتدوير الصور بزاوية 90 درجة لتحسين كفاءة التعبئة.</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- نموذج تحميل الملفات -->
+      <form id="upload-form" enctype="multipart/form-data">
+        <div class="mb-4">
+          <div id="drop-zone" class="drop-zone">
+            <i class="fas fa-upload drop-zone-icon"></i>
+            <div class="drop-zone-text">اسحب الملفات وأفلتها هنا أو انقر للاختيار</div>
+            <input type="file" id="file-input" name="images" multiple class="d-none" accept=".jpg, .jpeg, .png">
+            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file-input').click()">
+              <i class="fas fa-file-image"></i> اختر الصور
+            </button>
+          </div>
+          
+          <div class="form-text text-center">
+            <i class="fas fa-info-circle"></i>
+            يرجى تسمية الملفات بتضمين الأبعاد، مثال: <strong>design_9cm_x_5cm.png</strong>
+          </div>
+        </div>
+        
+        <div id="upload-progress" class="progress mt-3" style="display: none;">
+          <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div id="upload-status" class="text-center mb-3"></div>
+        
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-cloud-upload-alt"></i> تحميل وبدء المعالجة
+          </button>
+        </div>
+      </form>
+      
+      <!-- عرض الملفات التي تم تحميلها -->
+      <div id="files-container" class="mt-4" style="display: none;">
+        <h3 class="mb-3">الملفات التي تم تحميلها</h3>
+        <div id="file-list" class="file-list"></div>
+      </div>
+    </div>
+    
+    <div class="section-card">
+      <h2 class="section-title">كيفية استخدام الأداة</h2>
+      
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>قم بتحميل الصور</h4>
+            <p>تسمية الملفات متضمنة الأبعاد مثال: <code>design_9cm_x_5cm.png</code> أو مربع <code>pattern_main_9cm.png</code></p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>مراجعة الأبعاد</h4>
+            <p>تحقق وقم بتعديل أبعاد التصميم إذا لزم الأمر.</p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>ضبط خيارات التعبئة</h4>
+            <p>قم بضبط عرض اللوحة والمسافة بين التصاميم وخيارات أخرى.</p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h4>معاينة وتحميل النتائج</h4>
+            <p>احصل على ملفات PDF و PNG للتصميم المعبأ جاهزة للطباعة.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .feature-box {
+    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+  }
+  
+  .steps {
+    margin-top: 2rem;
+  }
+  
+  .step {
+    display: flex;
+    margin-bottom: 1.5rem;
+  }
+  
+  .step-number {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 1rem;
+    flex-shrink: 0;
+  }
+  
+  .step-content {
+    flex: 1;
+  }
+  
+  .step-content h4 {
+    margin-bottom: 0.5rem;
+  }
+</style> 

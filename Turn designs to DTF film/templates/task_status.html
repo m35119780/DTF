@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Processing Images - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card glass">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Processing Your Images</h2>
+                    
+                    <div id="status-container" class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span id="status-message">Starting processing...</span>
+                            <span id="status-percentage">0%</span>
+                        </div>
+                        
+                        <div class="progress" style="height: 25px;">
+                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%;" 
+                                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="status-details" class="mt-4 small text-muted d-none">
+                        <h5 class="border-bottom pb-2">Processing Details</h5>
+                        <ul id="status-log" class="list-unstyled">
+                            <!-- Log items will be added here -->
+                        </ul>
+                    </div>
+                    
+                    <div id="error-container" class="alert alert-danger d-none">
+                        <h5><i class="fas fa-exclamation-triangle me-2"></i>Error Processing Images</h5>
+                        <p id="error-message"></p>
+                        <div class="mt-3">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i> Return to Home
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div id="success-container" class="text-center d-none">
+                        <div class="mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 64px;"></i>
+                            <h4 class="mt-3">Processing Complete!</h4>
+                            <p>Redirecting to results...</p>
+                        </div>
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Task status tracking
+const taskId = '{{ task_id }}';
+let statusLog = [];
+let statusCheckInterval;
+let retryCount = 0;
+const maxRetries = 5;
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Show the status details panel
+    document.getElementById('status-details').classList.remove('d-none');
+    
+    // Start checking task status
+    statusCheckInterval = setInterval(checkTaskStatus, 1000);
+    
+    // Add initial log entry
+    addLogEntry('Starting task');
+});
+
+// Check task status from server
+function checkTaskStatus() {
+    fetch(`/api/task-status/${taskId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            retryCount = 0; // Reset retry counter on success
+            
+            // Update status display
+            updateStatusDisplay(data);
+            
+            // Handle completion
+            if (data.status === 'SUCCESS') {
+                clearInterval(statusCheckInterval);
+                handleSuccess(data);
+            } 
+            // Handle failure
+            else if (data.status === 'FAILURE') {
+                clearInterval(statusCheckInterval);
+                handleFailure(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking task status:', error);
+            retryCount++;
+            
+            if (retryCount >= maxRetries) {
+                clearInterval(statusCheckInterval);
+                handleConnectionError();
+            }
+        });
+}
+
+// Update the status display with current information
+function updateStatusDisplay(data) {
+    const statusMessage = document.getElementById('status-message');
+    const statusPercentage = document.getElementById('status-percentage');
+    const progressBar = document.getElementById('progress-bar');
+    
+    // Update status text
+    if (data.message) {
+        statusMessage.textContent = data.message;
+        addLogEntry(data.message);
+    }
+    
+    // Update progress percentage
+    if (data.progress !== null && data.progress !== undefined) {
+        const progress = Math.min(Math.max(data.progress, 0), 100);
+        statusPercentage.textContent = `${Math.round(progress)}%`;
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+    }
+}
+
+// Handle successful completion
+function handleSuccess(data) {
+    // Show success message
+    document.getElementById('success-container').classList.remove('d-none');
+    
+    // Set progress to 100%
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-bar').classList.remove('progress-bar-animated');
+    document.getElementById('progress-bar').classList.add('bg-success');
+    document.getElementById('status-percentage').textContent = '100%';
+    
+    // Redirect to results page after a short delay
+    if (data.redirect) {
+        setTimeout(() => {
+            window.location.href = data.redirect;
+        }, 2000);
+    }
+}
+
+// Handle task failure
+function handleFailure(data) {
+    // Show error message
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
+    
+    errorContainer.classList.remove('d-none');
+    errorMessage.textContent = data.message || 'An error occurred during processing';
+    
+    // Update progress bar to show failure
+    document.getElementById('progress-bar').classList.remove('progress-bar-animated');
+    document.getElementById('progress-bar').classList.add('bg-danger');
+}
+
+// Handle connection errors
+function handleConnectionError() {
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
+    
+    errorContainer.classList.remove('d-none');
+    errorMessage.textContent = 'Connection to server lost. Please refresh the page or try again later.';
+    
+    // Update progress bar to show warning
+    document.getElementById('progress-bar').classList.remove('progress-bar-animated');
+    document.getElementById('progress-bar').classList.add('bg-warning');
+}
+
+// Add a log entry
+function addLogEntry(message) {
+    if (!message || statusLog.includes(message)) return;
+    
+    const statusLog = document.getElementById('status-log');
+    const timestamp = new Date().toLocaleTimeString();
+    const logItem = document.createElement('li');
+    logItem.className = 'mb-1';
+    logItem.innerHTML = `<span class="text-muted me-2">${timestamp}</span> ${message}`;
+    
+    statusLog.appendChild(logItem);
+    statusLog.push(message);
+    
+    // Scroll to bottom of log
+    statusLog.scrollTop = statusLog.scrollHeight;
+}
+</script>
+{% endblock %} 

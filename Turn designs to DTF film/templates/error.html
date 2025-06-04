@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ error_code }} - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 fade-in-up-hidden">
+            <div class="card-body text-center p-5">
+                <div class="mb-4">
+                    {% if error_code == 404 %}
+                        <i class="fas fa-map-signs text-warning fa-5x mb-3"></i>
+                    {% elif error_code == 403 %}
+                        <i class="fas fa-lock text-danger fa-5x mb-3"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-triangle text-danger fa-5x mb-3"></i>
+                    {% endif %}
+                    
+                    <h1 class="display-1 fw-bold text-muted">{{ error_code }}</h1>
+                    <h2 class="h3 mb-3">{{ error_message }}</h2>
+                    
+                    {% if error_code == 404 %}
+                        <p class="text-muted mb-4">The page you were looking for doesn't exist or may have been moved.</p>
+                    {% elif error_code == 403 %}
+                        <p class="text-muted mb-4">You don't have permission to access this resource.</p>
+                    {% elif error_code == 500 %}
+                        <p class="text-muted mb-4">Our server encountered an unexpected error. We've been notified and will fix it as soon as possible.</p>
+                    {% else %}
+                        <p class="text-muted mb-4">Something went wrong. Please try again later.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-3">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-home me-2"></i> Return to Home
+                    </a>
+                    
+                    {% if error_code == 404 %}
+                    <button onclick="window.history.back()" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Go Back
+                    </button>
+                    {% endif %}
+                </div>
+                
+                {% if error_code == 500 and debug %}
+                <div class="mt-4 p-3 bg-light rounded text-start">
+                    <h6 class="fw-bold">Debug Information:</h6>
+                    <pre class="mb-0 small">{{ error_details }}</pre>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
