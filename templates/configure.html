@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}Setup DTF Layout - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-12">
+        <div class="text-center mb-5 fade-in-up-hidden">
+            <div class="mb-4">
+                <i class="fas fa-sliders-h fa-4x mb-3" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+                <h1 class="display-4 fw-bold mb-3">Setup DTF Layout</h1>
+                <p class="lead text-secondary fs-5">Configure your DTF printing parameters for optimal design placement</p>
+                <p class="text-muted">Fine-tune settings to maximize your DTF film efficiency and print quality</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Main Configuration Area -->
+            <div class="col-lg-8">
+                <form id="configForm" action="{{ url_for('process_with_dimensions') }}" method="post">
+                    <!-- CSRF Protection -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <!-- Canvas & Layout Settings -->
+                    <div class="card fade-in-up-hidden" data-delay="100">
+                        <div class="card-header d-flex align-items-center">
+                            <i class="fas fa-ruler-combined me-2"></i>
+                            <h5 class="mb-0">Canvas & Layout Settings</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="canvas_width_cm" name="canvas_width_cm" 
+                                               value="60.0" step="0.1" min="10" max="200" required placeholder="60.0">
+                                        <label for="canvas_width_cm"><i class="fas fa-ruler-horizontal me-2"></i>Canvas Width (cm)</label>
+                                        <div class="form-text mt-2">
+                                            <small>Standard DTF film width is 60cm</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="spacing_mm" name="spacing_mm" 
+                                               value="3" min="0" max="20" required placeholder="3">
+                                        <label for="spacing_mm"><i class="fas fa-arrows-alt me-2"></i>Spacing (mm)</label>
+                                        <div class="form-text mt-2">
+                                            <small>Distance between designs (0-20mm)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-4 mt-1">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="pdf_margin_cm" name="pdf_margin_cm" 
+                                               value="0.5" step="0.1" min="0" max="5" required placeholder="0.5">
+                                        <label for="pdf_margin_cm"><i class="fas fa-border-style me-2"></i>PDF Margin (cm)</label>
+                                        <div class="form-text mt-2">
+                                            <small>Margin for PDF output (0-5cm)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="png_dpi" name="png_dpi">
+                                            <option value="72">72 DPI (Web)</option>
+                                            <option value="150" selected>150 DPI (Standard)</option>
+                                            <option value="300">300 DPI (High Quality)</option>
+                                            <option value="600">600 DPI (Print)</option>
+                                        </select>
+                                        <label for="png_dpi"><i class="fas fa-image me-2"></i>PNG Output DPI</label>
+                                        <div class="form-text mt-2">
+                                            <small>Resolution for PNG output</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Packing Algorithm Settings -->
+                    <div class="card mt-4 fade-in-up-hidden" data-delay="200">
+                        <div class="card-header d-flex align-items-center">
+                            <i class="fas fa-brain me-2"></i>
+                            <h5 class="mb-0">Algorithm Settings</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="placement_step_mm" name="placement_step_mm" 
+                                               value="5" min="1" max="20" required placeholder="5">
+                                        <label for="placement_step_mm"><i class="fas fa-crosshairs me-2"></i>Step Size (mm)</label>
+                                        <div class="form-text mt-2">
+                                            <small>Lower values = more precise placement but slower</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="max_placement_attempts" name="max_placement_attempts" 
+                                               value="10" min="1" max="50" required placeholder="10">
+                                        <label for="max_placement_attempts"><i class="fas fa-redo me-2"></i>Max Attempts</label>
+                                        <div class="form-text mt-2">
+                                            <small>Maximum tries before skipping an image</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Performance Indicator -->
+                            <div class="mt-4 p-3 glass">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Performance Impact</h6>
+                                    <span id="performanceIndicator" class="badge bg-success">Balanced</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div id="performanceBar" class="progress-bar" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>Faster Processing</span>
+                                    <span>Better Results</span>
+                                </div>
+                                <p class="small text-muted mt-2 mb-0">
+                                    <i class="fas fa-info-circle me-1"></i> Your current settings balance between speed and quality.
+                                    <span id="performanceMessage"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rotation Settings -->
+                    <div class="card mt-4 fade-in-up-hidden" data-delay="300">
+                        <div class="card-header d-flex align-items-center">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            <h5 class="mb-0">Rotation Settings</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="glass p-4 rounded-3 d-flex align-items-center">
+                                <div class="form-check form-switch me-4">
+                                    <input class="form-check-input" type="checkbox" id="allow_rotation" name="allow_rotation" checked>
+                                    <label class="form-check-label fw-semibold fs-5" for="allow_rotation">
+                                        Enable 90° Rotation
+                                    </label>
+                                </div>
+                                <div class="ms-3 flex-grow-1">
+                                    <div class="d-flex align-items-center text-success mb-2">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <span class="ms-2 small">+15-30% efficiency</span>
+                                    </div>
+                                    <p class="small text-muted mb-0">
+                                        Rotating designs by 90° often improves packing density significantly.
+                                        <strong>Highly recommended for most DTF layouts.</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Format Selection -->
+                    <div class="card mt-4 fade-in-up-hidden" data-delay="350">
+                        <div class="card-header d-flex align-items-center">
+                            <i class="fas fa-file-export me-2"></i>
+                            <h5 class="mb-0">Output Format Selection</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <p class="text-muted mb-3">Choose which output formats you need. Selecting fewer formats will reduce processing time.</p>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="glass p-3 rounded-3 h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="generate_png" name="generate_png">
+                                            <label class="form-check-label fw-semibold" for="generate_png">
+                                                <i class="fas fa-file-image text-success me-2"></i>PNG File
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0">Visual preview image at selected DPI. Perfect for checking layout before printing.</p>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-success">~1-3 seconds</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="glass p-3 rounded-3 h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="generate_pdf" name="generate_pdf" checked>
+                                            <label class="form-check-label fw-semibold" for="generate_pdf">
+                                                <i class="fas fa-file-pdf text-danger me-2"></i>PDF File
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0">Print-ready document with exact dimensions. Essential for DTF printing workflow.</p>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-danger">~3-8 seconds</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="glass p-3 rounded-3 h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="generate_svg" name="generate_svg">
+                                            <label class="form-check-label fw-semibold" for="generate_svg">
+                                                <i class="fas fa-vector-square text-warning me-2"></i>SVG File
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0">Scalable vector format compatible with Adobe Illustrator and design software.</p>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-warning">~2-5 seconds</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="glass p-3 rounded-3 h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" id="generate_report" name="generate_report">
+                                            <label class="form-check-label fw-semibold" for="generate_report">
+                                                <i class="fas fa-file-alt text-info me-2"></i>Report File
+                                            </label>
+                                        </div>
+                                        <p class="small text-muted mb-0">Detailed placement coordinates and layout information in text format.</p>
+                                        <div class="mt-2">
+                                            <span class="badge bg-light text-info">~1-2 seconds</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 p-3 bg-light rounded-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    <h6 class="mb-0">Estimated Processing Time</h6>
+                                    <span id="estimatedTime" class="badge bg-warning ms-auto">~4-11 seconds</span>
+                                </div>
+                                <p class="small text-muted mb-0">
+                                    <span id="timeBreakdown">Selected: PDF (3-8s)</span>
+                                    Selecting only needed formats can significantly reduce wait time.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-4 d-grid fade-in-up-hidden" data-delay="400">
+                        <button type="submit" class="btn btn-success btn-lg py-3" id="processBtn">
+                            <i class="fas fa-rocket me-2"></i>Start Packing Process
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Uploaded Files -->
+                <div class="card fade-in-right-hidden" data-delay="200">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-images me-2"></i>
+                        <h6 class="mb-0">Uploaded Designs</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">Total Files:</span>
+                                <span class="badge bg-primary fs-6">{{ files|length }}</span>
+                            </div>
+                        </div>
+                        <div style="max-height: 300px; overflow-y: auto;" class="custom-scrollbar">
+                            {% for file in files %}
+                            <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                <i class="fas fa-file-image text-primary me-2"></i>
+                                <small class="text-truncate flex-grow-1">{{ file }}</small>
+                                <i class="fas fa-check-circle text-success ms-2"></i>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization Tips -->
+                <div class="card mt-4 fade-in-right-hidden" data-delay="300">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <h6 class="mb-0">DTF Optimization Tips</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="small">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Standard DTF Width: 60cm</strong>
+                                    <span class="text-muted">Most DTF printers use 60cm-wide film</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Use 2-3mm Spacing</strong>
+                                    <span class="text-muted">Provides safe distance for cutting while maximizing space</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-start">
+                                <div class="bg-light rounded-circle p-2 me-2 mt-1">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-1">Always Enable Rotation</strong>
+                                    <span class="text-muted">Results in significant space savings on DTF film</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- What to Expect -->
+                <div class="card mt-4 fade-in-right-hidden" data-delay="400">
+                    <div class="card-header d-flex align-items-center bg-light text-dark">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <h6 class="mb-0">What to Expect</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small text-muted ps-3 mb-0">
+                            <li class="mb-2">The packing algorithm will optimize your design layout to minimize wasted space</li>
+                            <li class="mb-2">By default, you'll receive a <strong>PDF</strong> output of your packed designs</li>
+                            <li class="mb-2">Select additional formats (PNG, SVG, Report) if needed for your workflow</li>
+                            <li>Processing time depends on the number and size of your designs and selected formats</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3 mb-0 py-2">
+                            <i class="fas fa-bolt me-2"></i> Selected output formats will be available for download after processing
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Modal -->
+<div class="modal fade" id="processingModal" tabindex="-1" aria-labelledby="processingModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="processingModalLabel">Processing Your DTF Layout</h5>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <h5 class="mb-3">Please wait while we optimize your designs</h5>
+                <p class="text-muted">This may take a few moments depending on the number of designs and settings you've chosen.</p>
+                
+                <div class="progress mt-4 mb-2">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="processingProgress"></div>
+                </div>
+                <p class="small text-muted mb-0" id="processingStatus">Initializing packing algorithm...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const configForm = document.getElementById('configForm');
+    const processBtn = document.getElementById('processBtn');
+    const processingModal = new bootstrap.Modal(document.getElementById('processingModal'));
+    const processingProgress = document.getElementById('processingProgress');
+    const processingStatus = document.getElementById('processingStatus');
+    
+    // Performance indicator logic
+    const stepSizeInput = document.getElementById('placement_step_mm');
+    const maxAttemptsInput = document.getElementById('max_placement_attempts');
+    const performanceIndicator = document.getElementById('performanceIndicator');
+    const performanceBar = document.getElementById('performanceBar');
+    const performanceMessage = document.getElementById('performanceMessage');
+    
+    function updatePerformanceIndicator() {
+        const stepSize = parseInt(stepSizeInput.value);
+        const maxAttempts = parseInt(maxAttemptsInput.value);
+        
+        // Calculate performance score (0-100)
+        // Lower step size and higher attempts = better quality but slower
+        const stepFactor = Math.max(0, Math.min(100, (20 - stepSize) * 5)); // 1=95, 5=75, 10=50, 20=0
+        const attemptFactor = Math.max(0, Math.min(100, maxAttempts * 2)); // 1=2, 10=20, 25=50, 50=100
+        
+        const qualityScore = (stepFactor * 0.7) + (attemptFactor * 0.3);
+        
+        // Update UI
+        performanceBar.style.width = qualityScore + '%';
+        
+        // Set indicator class and text
+        let indicatorClass, indicatorText, message;
+        
+        if (qualityScore < 30) {
+            indicatorClass = 'bg-success';
+            indicatorText = 'Fast';
+            message = 'Current settings prioritize speed over perfect packing.';
+        } else if (qualityScore < 60) {
+            indicatorClass = 'bg-success';
+            indicatorText = 'Balanced';
+            message = 'Your settings balance between speed and quality.';
+        } else if (qualityScore < 85) {
+            indicatorClass = 'bg-warning';
+            indicatorText = 'Quality';
+            message = 'Settings favor better packing but may take longer.';
+        } else {
+            indicatorClass = 'bg-danger';
+            indicatorText = 'Maximum Quality';
+            message = 'These settings will take longer but produce optimal packing.';
+        }
+        
+        performanceIndicator.className = 'badge ' + indicatorClass;
+        performanceIndicator.textContent = indicatorText;
+        performanceMessage.textContent = message;
+        
+        // Also update the progress bar color
+        performanceBar.className = 'progress-bar ' + indicatorClass;
+    }
+    
+    // Initialize performance indicator
+    updatePerformanceIndicator();
+    
+    // Update on input changes
+    stepSizeInput.addEventListener('input', updatePerformanceIndicator);
+    maxAttemptsInput.addEventListener('input', updatePerformanceIndicator);
+    
+    // Output format selection and time estimation
+    const outputCheckboxes = document.querySelectorAll('input[name^="generate_"]');
+    const estimatedTime = document.getElementById('estimatedTime');
+    const timeBreakdown = document.getElementById('timeBreakdown');
+    
+    function updateEstimatedTime() {
+        const selectedFormats = [];
+        let totalTime = 0;
+        
+        // Base processing time (always required)
+        const baseTime = 1; // Algorithm processing
+        totalTime += baseTime;
+        
+        // Check each format
+        if (document.getElementById('generate_png').checked) {
+            selectedFormats.push('PNG (1-3s)');
+            totalTime += 2; // Average PNG time
+        }
+        if (document.getElementById('generate_pdf').checked) {
+            selectedFormats.push('PDF (3-8s)');
+            totalTime += 5.5; // Average PDF time
+        }
+        if (document.getElementById('generate_svg').checked) {
+            selectedFormats.push('SVG (2-5s)');
+            totalTime += 3.5; // Average SVG time
+        }
+        if (document.getElementById('generate_report').checked) {
+            selectedFormats.push('Report (1-2s)');
+            totalTime += 1.5; // Average Report time
+        }
+        
+        // Update display
+        const minTime = Math.max(1, totalTime - 2);
+        const maxTime = totalTime + 3;
+        estimatedTime.textContent = `~${minTime}-${maxTime} seconds`;
+        
+        if (selectedFormats.length === 0) {
+            timeBreakdown.textContent = 'Please select at least one output format.';
+            estimatedTime.textContent = '0 seconds';
+            estimatedTime.className = 'badge bg-danger ms-auto';
+        } else {
+            timeBreakdown.textContent = `Selected: ${selectedFormats.join(', ')}`;
+            
+            // Color code based on time
+            if (totalTime <= 4) {
+                estimatedTime.className = 'badge bg-success ms-auto';
+            } else if (totalTime <= 8) {
+                estimatedTime.className = 'badge bg-warning ms-auto';
+            } else {
+                estimatedTime.className = 'badge bg-danger ms-auto';
+            }
+        }
+    }
+    
+    // Initialize time estimation
+    updateEstimatedTime();
+    
+    // Update time estimation when checkboxes change
+    outputCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateEstimatedTime);
+    });
+    
+    // Form validation
+    function validateOutputSelection() {
+        const anySelected = Array.from(outputCheckboxes).some(cb => cb.checked);
+        return anySelected;
+    }
+    
+    // Form submission
+    if (configForm) {
+        configForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate output selection
+            if (!validateOutputSelection()) {
+                showToast('Please select at least one output format before processing.', 'warning');
+                return;
+            }
+            
+            // Show processing modal
+            processingModal.show();
+            
+            // Calculate estimated time for progress simulation
+            const selectedCount = Array.from(outputCheckboxes).filter(cb => cb.checked).length;
+            const progressInterval = Math.max(300, 1000 / selectedCount); // Adjust speed based on selection
+            
+            // Simulate progress (real progress will be handled by server)
+            let progress = 0;
+            const interval = setInterval(function() {
+                progress += 3;
+                if (progress > 95) {
+                    clearInterval(interval);
+                } else {
+                    processingProgress.style.width = progress + '%';
+                    
+                    // Update status message based on selected formats
+                    if (progress < 15) {
+                        processingStatus.textContent = 'Analyzing your designs...';
+                    } else if (progress < 30) {
+                        processingStatus.textContent = 'Running packing algorithm...';
+                    } else if (progress < 50) {
+                        processingStatus.textContent = 'Generating selected output formats...';
+                    } else if (progress < 70) {
+                        processingStatus.textContent = 'Processing images and layouts...';
+                    } else if (progress < 90) {
+                        processingStatus.textContent = 'Finalizing outputs...';
+                    } else {
+                        processingStatus.textContent = 'Almost done...';
+                    }
+                }
+            }, progressInterval);
+            
+            // Submit the form
+            const formData = new FormData(configForm);
+            
+            fetch(configForm.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(interval);
+                processingProgress.style.width = '100%';
+                
+                if (data.redirect) {
+                    processingStatus.textContent = 'Success! Redirecting to results...';
+                    setTimeout(function() {
+                        window.location.href = data.redirect;
+                    }, 500);
+                } else if (data.error) {
+                    processingModal.hide();
+                    showToast('Error: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                clearInterval(interval);
+                processingModal.hide();
+                console.error('Error:', error);
+                showToast('Processing failed. Please try again.', 'danger');
+            });
+        });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'primary') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = 11;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast show align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-info-circle me-2"></i> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(toastContainer);
+            }, 500);
+        }, 5000);
+    }
+});
+</script>
+{% endblock %} 

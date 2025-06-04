@@ -1,0 +1,129 @@
+<%- include('base') %>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="section-card">
+      <h1 class="section-title">إعداد تكوين اللوحة</h1>
+      <p class="section-subtitle">قم بتعديل خيارات ترتيب الصور على لوحة DTF</p>
+      
+      <form id="config-form">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          سيتم معالجة <%= uploadsCount %> من الصور. استخدم الخيارات أدناه لتحسين الترتيب.
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="config-option">
+              <label for="canvas-width" class="form-label">عرض لوحة DTF (سم)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="canvas-width" 
+                name="canvasWidth" 
+                value="<%= config.canvasWidth %>" 
+                min="10" 
+                max="200" 
+                step="0.1" 
+                required
+              >
+              <div class="form-text">عادة ما يكون عرض الأفلام 60 سم</div>
+            </div>
+            
+            <div class="config-option">
+              <label for="spacing" class="form-label">المسافة بين الصور (مم)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="spacing" 
+                name="spacing" 
+                value="<%= config.spacing %>" 
+                min="0" 
+                max="50" 
+                step="0.5" 
+                required
+              >
+              <div class="form-text">المسافة الفاصلة بين التصاميم بالمليمتر</div>
+            </div>
+            
+            <div class="config-option form-check">
+              <input 
+                type="checkbox" 
+                class="form-check-input" 
+                id="allow-rotation" 
+                name="allowRotation" 
+                <% if(config.allowRotation) { %>checked<% } %>
+              >
+              <label class="form-check-label" for="allow-rotation">
+                السماح بتدوير الصور (90 درجة)
+              </label>
+              <div class="form-text">تدوير الصور قد يحسن من كفاءة الترتيب</div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="canvas-preview">
+              <h4>معلومات اللوحة</h4>
+              <div class="mb-2">
+                <strong>العرض:</strong> <span id="preview-width"><%= config.canvasWidth %></span> سم
+              </div>
+              <div class="mb-2">
+                <strong>المسافة:</strong> <span id="preview-spacing"><%= config.spacing %></span> مم
+              </div>
+              <div class="mb-4">
+                <strong>تدوير:</strong> <span id="preview-rotation"><%= config.allowRotation ? 'مسموح' : 'غير مسموح' %></span>
+              </div>
+              
+              <div class="canvas-illustration">
+                <svg width="100%" height="120" viewBox="0 0 300 120">
+                  <rect x="2" y="2" width="296" height="116" fill="#f8f8f8" stroke="#ccc" stroke-width="1" />
+                  <rect x="20" y="20" width="60" height="40" fill="#bde0fe" stroke="#3498db" stroke-width="1" />
+                  <rect x="90" y="20" width="40" height="60" fill="#bde0fe" stroke="#3498db" stroke-width="1" />
+                  <rect x="20" y="70" width="50" height="30" fill="#bde0fe" stroke="#3498db" stroke-width="1" />
+                  <rect x="140" y="40" width="70" height="30" fill="#bde0fe" stroke="#3498db" stroke-width="1" />
+                  <text x="150" y="60" font-size="12" text-anchor="middle" fill="#333">الصور</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4">
+          <div id="processing-indicator" style="display: none;">
+            <div class="spinner mb-3"></div>
+            <div class="text-center">جاري معالجة وترتيب الصور، يرجى الانتظار...</div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-magic"></i> بدء ترتيب الصور
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // تحديث معاينة اللوحة عندما تتغير القيم
+    const canvasWidth = document.getElementById('canvas-width');
+    const spacing = document.getElementById('spacing');
+    const allowRotation = document.getElementById('allow-rotation');
+    
+    const previewWidth = document.getElementById('preview-width');
+    const previewSpacing = document.getElementById('preview-spacing');
+    const previewRotation = document.getElementById('preview-rotation');
+    
+    canvasWidth.addEventListener('input', function() {
+      previewWidth.textContent = this.value;
+    });
+    
+    spacing.addEventListener('input', function() {
+      previewSpacing.textContent = this.value;
+    });
+    
+    allowRotation.addEventListener('change', function() {
+      previewRotation.textContent = this.checked ? 'مسموح' : 'غير مسموح';
+    });
+  });
+</script> 

@@ -1,0 +1,103 @@
+<%- include('base') %>
+
+<div class="row">
+  <div class="col-lg-10 mx-auto">
+    <div class="section-card">
+      <h1 class="section-title">مراجعة أبعاد الصور</h1>
+      <p class="section-subtitle">تحقق من أبعاد الصور وقم بتعديلها إذا لزم الأمر قبل المتابعة</p>
+      
+      <form id="dimensions-form">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          تأكد من أن جميع الأبعاد صحيحة. إذا لم يتم قراءة الأبعاد من اسم الملف، ستحتاج إلى إدخالها يدويًا.
+        </div>
+        
+        <% if (uploads && uploads.length > 0) { %>
+          <div class="row mb-4">
+            <div class="col-12">
+              <h3 class="mb-3">الصور المحملة (<%= uploads.length %>)</h3>
+            </div>
+            
+            <% uploads.forEach(function(file) { %>
+              <div class="col-md-6 mb-4">
+                <div class="file-dimensions-container">
+                  <img src="/thumbnail/<%= session.uploadId %>/<%= file.filename %>" class="file-preview" alt="<%= file.originalName %>">
+                  
+                  <div class="file-info">
+                    <div class="mb-1"><strong><%= file.originalName %></strong></div>
+                    <div class="dimensions-display">
+                      <% if (file.dimensions) { %>
+                        <%= file.dimensions.width %>cm × <%= file.dimensions.height %>cm
+                      <% } else { %>
+                        الأبعاد غير معروفة
+                      <% } %>
+                    </div>
+                    
+                    <div class="dimension-inputs">
+                      <div class="dimension-input-group">
+                        <input 
+                          type="number" 
+                          class="form-control dimension-input" 
+                          data-file-id="<%= file.id %>" 
+                          data-dimension="width" 
+                          value="<%= file.dimensions ? file.dimensions.width : '' %>" 
+                          step="0.1" 
+                          min="0.1" 
+                          required
+                        >
+                        <span class="dimension-unit">سم</span>
+                        <div class="error-message"></div>
+                      </div>
+                      
+                      <div class="mx-2">×</div>
+                      
+                      <div class="dimension-input-group">
+                        <input 
+                          type="number" 
+                          class="form-control dimension-input" 
+                          data-file-id="<%= file.id %>" 
+                          data-dimension="height" 
+                          value="<%= file.dimensions ? file.dimensions.height : '' %>" 
+                          step="0.1" 
+                          min="0.1" 
+                          required
+                        >
+                        <span class="dimension-unit">سم</span>
+                        <div class="error-message"></div>
+                      </div>
+                      
+                      <i class="fas fa-check-circle success-icon"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+          
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-arrow-left"></i> متابعة إلى إعدادات التعبئة
+            </button>
+          </div>
+        <% } else { %>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            لم يتم العثور على صور. يرجى <a href="/">العودة للصفحة الرئيسية</a> وتحميل بعض الصور أولاً.
+          </div>
+        <% } %>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .file-dimensions-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e2e2e2;
+  }
+  
+  .dimension-inputs {
+    margin-top: 10px;
+  }
+</style> 

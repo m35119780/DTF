@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block title %}Review Dimensions - DTF Design Packer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="mb-4">
+            <h1 class="display-6 text-primary">
+                <i class="bi bi-rulers"></i> Review Image Dimensions
+            </h1>
+            <p class="lead">Verify and adjust the width dimensions for your DTF designs</p>
+            <p class="text-muted">
+                Auto-detected dimensions are shown below. You can edit any values or add dimensions for undetected images.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Info -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-1">
+                            <i class="bi bi-info-circle text-info"></i> Upload Summary
+                        </h5>
+                        <p class="mb-0">
+                            {{ total_files }} files uploaded | 
+                            {{ detected_files|length }} auto-detected | 
+                            {{ manual_files|length }} need manual input
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="progress" style="width: 150px; height: 8px;">
+                            {% set progress = ((detected_files|length) / total_files * 100) if total_files > 0 else 0 %}
+                            <div class="progress-bar bg-success" style="width: {{ progress }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ "%.0f"|format(progress) }}% detected</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Detected Files -->
+{% if detected_files %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="h4 text-success">
+            <i class="bi bi-check-circle"></i> Auto-Detected Dimensions
+        </h3>
+        <p class="text-muted mb-3">These files had their dimensions automatically detected from their filenames.</p>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Design Preview</th>
+                        <th>Filename</th>
+                        <th>Detected Width</th>
+                        <th>Pixel Size</th>
+                        <th>Calculated Height</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in detected_files %}
+                    <tr id="row-{{ loop.index }}">
+                        <td class="text-center" style="width: 100px;">
+                            <div class="thumbnail-container position-relative">
+                                <img src="{{ url_for('get_thumbnail', upload_id=session['upload_id'], filename=file.filename) }}" 
+                                     alt="Preview of {{ file.filename }}" 
+                                     class="design-thumbnail border rounded preview-trigger"
+                                     data-filename="{{ file.filename }}"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#previewModal"
+                                     style="width: 60px; height: 60px; object-fit: contain; background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                     title="Click to preview {{ file.filename }}">
+                                <div class="thumbnail-fallback text-center d-none preview-trigger" 
+                                     data-filename="{{ file.filename }}"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#previewModal"
+                                     style="width: 60px; height: 60px; background: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6c757d; cursor: pointer;"
+                                     title="Click to preview {{ file.filename }}">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                                <div class="thumbnail-overlay">
+                                    <i class="bi bi-zoom-in"></i>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ file.filename }}</strong>
+                            <br><small class="text-success">Auto-detected</small>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm" style="max-width: 120px;">
+                                <input type="number" 
+                                       class="form-control width-input" 
+                                       data-filename="{{ file.filename }}"
+                                       value="{{ file.detected_width }}" 
+                                       step="0.1" 
+                                       min="0.1" 
+                                       max="100">
+                                <span class="input-group-text">cm</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if file.pixel_dimensions %}
+                                <small class="text-muted">{{ file.pixel_dimensions }}</small>
+                            {% else %}
+                                <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="calculated-height">
+                                {% if file.calculated_height %}
+                                    {{ "%.1f"|format(file.calculated_height) }} cm
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary update-btn" 
+                                    data-filename="{{ file.filename }}">
+                                <i class="bi bi-arrow-clockwise"></i> Update
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Manual Input Files -->
+{% if manual_files %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="h4 text-warning">
+            <i class="bi bi-exclamation-triangle"></i> Manual Input Required
+        </h3>
+        <p class="text-muted mb-3">Please enter the width dimensions for these files manually.</p>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Design Preview</th>
+                        <th>Filename</th>
+                        <th>Width (cm)</th>
+                        <th>Pixel Size</th>
+                        <th>Calculated Height</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in manual_files %}
+                    <tr id="manual-row-{{ loop.index }}">
+                        <td class="text-center" style="width: 100px;">
+                            <div class="thumbnail-container position-relative">
+                                <img src="{{ url_for('get_thumbnail', upload_id=session['upload_id'], filename=file.filename) }}" 
+                                     alt="Preview of {{ file.filename }}" 
+                                     class="design-thumbnail border rounded preview-trigger"
+                                     data-filename="{{ file.filename }}"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#previewModal"
+                                     style="width: 60px; height: 60px; object-fit: contain; background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0px;"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                     title="Click to preview {{ file.filename }}">
+                                <div class="thumbnail-fallback text-center d-none preview-trigger" 
+                                     data-filename="{{ file.filename }}"
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#previewModal"
+                                     style="width: 60px; height: 60px; background: #f8f9fa; border: 1px dashed #dee2e6; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6c757d; cursor: pointer;"
+                                     title="Click to preview {{ file.filename }}">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                                <div class="thumbnail-overlay">
+                                    <i class="bi bi-zoom-in"></i>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ file.filename }}</strong>
+                            <br><small class="text-warning">Manual input needed</small>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm" style="max-width: 120px;">
+                                <input type="number" 
+                                       class="form-control width-input" 
+                                       data-filename="{{ file.filename }}"
+                                       placeholder="e.g. 5.0" 
+                                       step="0.1" 
+                                       min="0.1" 
+                                       max="100">
+                                <span class="input-group-text">cm</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if file.pixel_dimensions %}
+                                <small class="text-muted">{{ file.pixel_dimensions }}</small>
+                            {% else %}
+                                <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="calculated-height text-muted">-</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success update-btn" 
+                                    data-filename="{{ file.filename }}">
+                                <i class="bi bi-plus-circle"></i> Add
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Configuration & Process -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear"></i> DTF Printing Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="processForm">
+                    <!-- CSRF Protection -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="canvas_width_cm" class="form-label">Canvas Width (cm)</label>
+                                <input type="number" class="form-control" id="canvas_width_cm" 
+                                       name="canvas_width_cm" value="60" step="0.1" min="10" max="200">
+                                <div class="form-text">Width of your DTF film roll</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="spacing_mm" class="form-label">Design Spacing (mm)</label>
+                                <input type="number" class="form-control" id="spacing_mm" 
+                                       name="spacing_mm" value="3" step="0.5" min="0" max="20">
+                                <div class="form-text">Gap between designs for cutting</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="png_dpi" class="form-label">Output DPI</label>
+                                <select class="form-select" id="png_dpi" name="png_dpi">
+                                    <option value="150" selected>150 DPI (Good)</option>
+                                    <option value="300">300 DPI (High Quality)</option>
+                                    <option value="600">600 DPI (Maximum)</option>
+                                </select>
+                                <div class="form-text">Higher DPI = larger file size</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" id="allow_rotation" 
+                                           name="allow_rotation" checked>
+                                    <label class="form-check-label" for="allow_rotation">
+                                        Allow image rotation for better fit
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-play-circle"></i> Ready to Process?
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="readiness-status" class="mb-3">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-clock"></i> 
+                        <span id="pending-count">{{ manual_files|length }}</span> files need dimensions
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="button" class="btn btn-success btn-lg" id="continueBtn">
+                        <i class="fas fa-arrow-right me-2"></i> Continue to Configuration
+                    </button>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        This will arrange your designs optimally on DTF film and generate 
+                        print-ready files.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="bi bi-eye"></i> Design Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="previewLoading" class="mb-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading preview...</p>
+                </div>
+                <div id="previewContent" style="display: none;">
+                    <div class="preview-image-container mb-3">
+                        <img id="previewImage" class="img-fluid rounded shadow" style="max-height: 65vh; max-width: 80%; background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px;" alt="Design Preview">
+                    </div>
+                    <div class="mt-3">
+                        <h6 id="previewFilename" class="text-primary"></h6>
+                        <div class="row text-muted small">
+                            <div class="col-md-4">
+                                <strong>Pixel Size:</strong><br>
+                                <span id="previewPixelSize">-</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Print Width:</strong><br>
+                                <span id="previewWidth">-</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Print Height:</strong><br>
+                                <span id="previewHeight">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="previewError" style="display: none;" class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <p>Failed to load image preview</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="editDimensionsBtn">
+                    <i class="bi bi-pencil"></i> Edit Dimensions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let pendingFiles = {{ manual_files|length }};
+    let currentPreviewFilename = '';
+    
+    // Preview modal functionality
+    const previewModal = document.getElementById('previewModal');
+    const previewImage = document.getElementById('previewImage');
+    const previewFilename = document.getElementById('previewFilename');
+    const previewPixelSize = document.getElementById('previewPixelSize');
+    const previewWidth = document.getElementById('previewWidth');
+    const previewHeight = document.getElementById('previewHeight');
+    const previewLoading = document.getElementById('previewLoading');
+    const previewContent = document.getElementById('previewContent');
+    const previewError = document.getElementById('previewError');
+    const editDimensionsBtn = document.getElementById('editDimensionsBtn');
+    
+    // Handle thumbnail clicks for preview
+    document.querySelectorAll('.preview-trigger').forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filename = this.dataset.filename;
+            currentPreviewFilename = filename;
+            showImagePreview(filename);
+        });
+    });
+    
+    function showImagePreview(filename) {
+        // Reset modal state
+        previewLoading.style.display = 'block';
+        previewContent.style.display = 'none';
+        previewError.style.display = 'none';
+        
+        // Set filename
+        previewFilename.textContent = filename;
+        
+        // Find file data from session
+        const fileData = findFileData(filename);
+        if (fileData) {
+            previewPixelSize.textContent = fileData.pixel_dimensions || '-';
+            previewWidth.textContent = fileData.detected_width ? fileData.detected_width + ' cm' : '-';
+            previewHeight.textContent = fileData.calculated_height ? fileData.calculated_height.toFixed(1) + ' cm' : '-';
+        }
+        
+        // Create a route to serve full-size image (we'll use a larger version of thumbnail for now)
+        // In a real implementation, you might want a separate route for full-size images
+        const imageUrl = `/preview/{{ session['upload_id'] }}/${filename}`;
+        
+        // Load the image
+        const img = new Image();
+        img.onload = function() {
+            previewImage.src = imageUrl;
+            previewLoading.style.display = 'none';
+            previewContent.style.display = 'block';
+        };
+        img.onerror = function() {
+            previewLoading.style.display = 'none';
+            previewError.style.display = 'block';
+        };
+        img.src = imageUrl;
+    }
+    
+    function findFileData(filename) {
+        // Check detected files
+        const detectedFiles = {{ detected_files|tojson }};
+        let found = detectedFiles.find(f => f.filename === filename);
+        if (found) return found;
+        
+        // Check manual files
+        const manualFiles = {{ manual_files|tojson }};
+        found = manualFiles.find(f => f.filename === filename);
+        return found;
+    }
+    
+    // Handle edit dimensions button in modal
+    editDimensionsBtn.addEventListener('click', function() {
+        if (currentPreviewFilename) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(previewModal);
+            modal.hide();
+            
+            // Focus on the input field for this file
+            setTimeout(() => {
+                const targetRow = document.querySelector(`[data-filename="${currentPreviewFilename}"]`).closest('tr');
+                const widthInput = targetRow.querySelector('.width-input');
+                if (widthInput) {
+                    widthInput.focus();
+                    widthInput.select();
+                    
+                    // Scroll to the row
+                    targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+        }
+    });
+    
+    // Add fullscreen preview functionality
+    let isFullscreen = false;
+    
+    previewImage.addEventListener('click', function() {
+        if (!isFullscreen) {
+            // Enter fullscreen
+            this.classList.add('preview-fullscreen');
+            document.body.style.overflow = 'hidden';
+            isFullscreen = true;
+        } else {
+            // Exit fullscreen
+            this.classList.remove('preview-fullscreen');
+            document.body.style.overflow = '';
+            isFullscreen = false;
+        }
+    });
+    
+    // Exit fullscreen on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && isFullscreen) {
+            previewImage.classList.remove('preview-fullscreen');
+            document.body.style.overflow = '';
+            isFullscreen = false;
+        }
+    });
+    
+    // Reset fullscreen state when modal closes
+    previewModal.addEventListener('hidden.bs.modal', function() {
+        if (isFullscreen) {
+            previewImage.classList.remove('preview-fullscreen');
+            document.body.style.overflow = '';
+            isFullscreen = false;
+        }
+    });
+    
+    function updateReadinessStatus() {
+        const statusDiv = document.getElementById('readiness-status');
+        const processBtn = document.getElementById('continueBtn');
+        const pendingCount = document.getElementById('pending-count');
+        
+        if (pendingFiles === 0) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> All files have dimensions!
+                </div>
+            `;
+            processBtn.disabled = false;
+        } else {
+            pendingCount.textContent = pendingFiles;
+            processBtn.disabled = true;
+        }
+    }
+    
+    // Handle dimension updates
+    document.querySelectorAll('.update-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const filename = this.dataset.filename;
+            const row = this.closest('tr');
+            const widthInput = row.querySelector('.width-input');
+            const width = parseFloat(widthInput.value);
+            
+            if (!width || width <= 0) {
+                alert('Please enter a valid width greater than 0');
+                return;
+            }
+            
+            // Disable button and show loading
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Updating...';
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            fetch('/update-dimension', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    filename: filename,
+                    width_cm: width
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the row
+                    const heightSpan = row.querySelector('.calculated-height');
+                    if (data.calculated_height) {
+                        heightSpan.textContent = data.calculated_height.toFixed(1) + ' cm';
+                    }
+                    
+                    // Update button
+                    this.innerHTML = '<i class="bi bi-check"></i> Updated';
+                    this.classList.remove('btn-outline-primary', 'btn-success');
+                    this.classList.add('btn-outline-success');
+                    
+                    // Update status label
+                    const statusSmall = row.querySelector('small');
+                    if (statusSmall.textContent.includes('Manual input needed')) {
+                        statusSmall.innerHTML = '<span class="text-success">Manual input added</span>';
+                        pendingFiles--;
+                        updateReadinessStatus();
+                    }
+                    
+                    setTimeout(() => {
+                        this.disabled = false;
+                        this.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+                        this.classList.remove('btn-outline-success');
+                        this.classList.add('btn-outline-primary');
+                    }, 2000);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Retry';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Retry';
+            });
+        });
+    });
+    
+    // Process button handler
+    document.getElementById('continueBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Check if all files have valid dimensions
+        const invalidFiles = [];
+        
+        // Check detected files
+        document.querySelectorAll('#detected-files .width-input').forEach(input => {
+            const width = parseFloat(input.value);
+            const filename = input.getAttribute('data-filename');
+            if (!width || width <= 0 || width > 100) {
+                invalidFiles.push(filename);
+            }
+        });
+        
+        // Check manual files  
+        document.querySelectorAll('#manual-files .width-input').forEach(input => {
+            const width = parseFloat(input.value);
+            const filename = input.getAttribute('data-filename');
+            if (!width || width <= 0 || width > 100) {
+                invalidFiles.push(filename);
+            }
+        });
+        
+        if (invalidFiles.length > 0) {
+            alert(`Please set valid dimensions (0.1-100 cm) for all files. Missing: ${invalidFiles.join(', ')}`);
+            return;
+        }
+        
+        // All dimensions are valid, redirect to configuration page
+        window.location.href = '/configure';
+    });
+    
+    // Initial status update
+    updateReadinessStatus();
+});
+</script>
+
+<style>
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.form-text {
+    font-size: 0.875rem;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+/* Thumbnail styles */
+.design-thumbnail {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.design-thumbnail:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10;
+    position: relative;
+}
+
+.thumbnail-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 123, 255, 0.8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.thumbnail-container:hover .thumbnail-overlay {
+    opacity: 1;
+}
+
+.preview-trigger {
+    cursor: pointer;
+}
+
+.preview-trigger:hover {
+    opacity: 0.8;
+}
+
+.thumbnail-fallback {
+    transition: all 0.3s ease;
+}
+
+.thumbnail-fallback:hover {
+    background: #e9ecef !important;
+    border-color: #adb5bd !important;
+}
+
+/* Loading state for thumbnails */
+.design-thumbnail[src*="thumbnail"] {
+    background-image: 
+        linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+        linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+/* Table cell vertical alignment */
+.table td {
+    vertical-align: middle;
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+    .design-thumbnail {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .thumbnail-fallback {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 10px !important;
+    }
+    
+    .table th:first-child,
+    .table td:first-child {
+        width: 60px;
+    }
+}
+
+/* Enhanced Preview Modal Styles */
+.preview-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 20px;
+    background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+#previewImage {
+    transition: all 0.3s ease;
+    cursor: zoom-in;
+}
+
+#previewImage:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+/* Modal enhancements */
+.modal-xl {
+    max-width: 1200px;
+}
+
+.modal-xl .modal-body {
+    padding: 2rem;
+}
+
+/* Full screen preview on click */
+.preview-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    z-index: 9999 !important;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border-radius: 0 !important;
+    border: none !important;
+    cursor: zoom-out !important;
+}
+
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 95%;
+    }
+    
+    .preview-image-container {
+        min-height: 300px;
+        padding: 15px;
+    }
+    
+    #previewImage {
+        max-height: 75vh !important;
+    }
+}
+</style>
+{% endblock %} 
